@@ -1,0 +1,67 @@
+version: '2.3'
+services:
+    ipv6nat:
+            restart: unless-stopped
+            image: "us-docker.pkg.dev/omgwtfbbq/gcr.io/ipv6nat:3"
+            privileged: true
+            network_mode: "host"
+            volumes:
+                    - "/var/run/docker.sock:/var/run/docker.sock:ro"                                                           
+                    - "/lib/modules:/lib/modules:ro"
+    unbound:
+            restart: unless-stopped
+            runtime: runsc-kvm
+            image: "us-docker.pkg.dev/omgwtfbbq/gcr.io/debian-bind:3"
+            #image: "us-docker.pkg.dev/omgwtfbbq/gcr.io/alpine-unbound:14"
+            volumes:
+                    - "/docker/resolv.conf:/etc/resolv.conf"
+                    - "/docker/unbound.conf:/etc/unbound/unbound.conf"
+            mem_limit: 8g
+            networks:
+                    omgwtfbbq:
+                            ipv4_address: 172.19.1.50
+            dns: 172.19.1.50
+    wtf:
+            restart: unless-stopped
+            #runtime: runsc-kvm
+            volumes:
+                    - "/docker/resolv.conf:/etc/resolv.conf"
+                    - "/usr/local/tmp:/usr/local/tmp"
+            image: "us-docker.pkg.dev/omgwtfbbq/gcr.io/wtf-standalone:3.2.31"
+            networks:
+                    omgwtfbbq:
+                            ipv4_address: 172.19.1.200
+            dns: 172.19.1.50
+            mem_limit: 32g
+            ports:
+              - "95.217.228.176:80:10080"
+              - "95.217.228.176:443:10443"
+              - "[2a01:4f9:4b:4c8f::2]:80:10080"
+              - "[2a01:4f9:4b:4c8f::2]:443:10443"
+
+    stun:
+            restart: unless-stopped
+            runtime: runsc-kvm
+            image: "us-docker.pkg.dev/omgwtfbbq/gcr.io/alpine-stun:7"
+            mem_limit: 256m
+            volumes:
+                    - "/docker/turnserver/turnserver.conf:/etc/turnserver.conf"
+            networks:
+                    omgwtfbbq:
+                            ipv4_address: 172.19.1.150
+            ports:
+              - "3478:3478/udp"
+    redis:
+            restart: unless-stopped
+            runtime: runsc-kvm
+            image: "us-docker.pkg.dev/omgwtfbbq/gcr.io/alpine-redis:3"
+            mem_limit: 256m
+            networks:
+                    omgwtfbbq:
+                            ipv4_address: 172.19.1.70
+            dns: 172.19.1.50
+
+
+networks:
+        omgwtfbbq:
+                external: true
